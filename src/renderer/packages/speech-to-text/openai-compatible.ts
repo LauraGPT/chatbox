@@ -7,7 +7,7 @@ export interface OpenAICompatibleTranscriptionConfig {
 type FetchLike = typeof fetch
 
 function getTranscriptionUrl(baseUrl: string): string {
-  const normalized = baseUrl.replace(/\/+$/, '').replace(/\/v1$/, '')
+  const normalized = baseUrl.trim().replace(/\/+$/, '').replace(/\/v1$/, '')
   return `${normalized}/v1/audio/transcriptions`
 }
 
@@ -26,10 +26,21 @@ export async function transcribeOpenAICompatibleAudio(
     headers: apiKey ? { Authorization: `Bearer ${apiKey}` } : {},
     body: formData,
   })
-  const payload = await response.json()
+  const payload = await response.json().catch((error: unknown) => {
+    if (!(error instanceof SyntaxError)) {
+      throw error
+    }
+    if (response.ok) {
+      throw new Error('The transcription service returned invalid JSON')
+    }
+    return undefined
+  })
 
   if (!response.ok) {
-    throw new Error(payload?.error?.message ?? 'Audio transcription failed')
+    const message = [payload?.error?.message, payload?.detail].find(
+      (value): value is string => typeof value === 'string' && Boolean(value.trim())
+    )
+    throw new Error(`Audio transcription failed (HTTP ${response.status})${message ? `: ${message}` : ''}`)
   }
   if (typeof payload?.text !== 'string' || !payload.text.trim()) {
     throw new Error('The transcription service returned no text')
