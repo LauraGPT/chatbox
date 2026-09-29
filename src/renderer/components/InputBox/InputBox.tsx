@@ -1887,7 +1887,7 @@ const InputBox = forwardRef<InputBoxRef, InputBoxProps>(
                   onImageUploadClick={onImageUploadClick}
                   onFileUploadClick={onFileUploadClick}
                   onAudioTranscriptionClick={onAudioTranscriptionClick}
-                  speechToTextEnabled={Boolean(speechToText?.enabled) && !isSmallScreen}
+                  speechToTextEnabled={Boolean(speechToText?.enabled) && platform.type !== 'mobile'}
                   transcribingAudio={transcribingAudio}
                   t={t}
                 />
